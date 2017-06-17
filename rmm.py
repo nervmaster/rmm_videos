@@ -1,13 +1,14 @@
 import subprocess
 import sys
 import json
+import shlex
 
 #	@author Victor Renan Covalski Junes <vrcjunes@inf.ufpel.edu.br>
 #	@author	Henrique Pereira Borges 	<hpborges@inf.ufpel.edu.br>
 
 original_file = sys.argv[1] #filename
 
-profile = 'ultrafast'
+profile = sys.argv[2]
 
 #width, height, bitrate and duration of the video #v:0 ignores the audio stream
 print 'Getting metadata'
@@ -75,9 +76,40 @@ for x in target_bitrate:
 	'-bufsize', '{}'.format(x),
 	'-minrate', '{}'.format(x),
 	'-maxrate', '{}'.format(x),
-	output], stderr=subprocess.PIPE).wait() #ffmpeg outputs to stderr
+	output], stderr=subprocess.STDOUT, stdout=subprocess.PIPE) #ffmpeg outputs to stderr
 	
+	result.wait()
+
+	# Gerar os dados de qualidade
+	arg = 'ffmpeg -i ' + video_stream + ' -i ' + output + ' -lavfi "ssim;[0:v][1:v]psnr" -f null -' 
+	stats = subprocess.Popen( shlex.split(arg) , stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+
+	stats.wait()
+
 	#parse values
+	lines = stats.communicate()[0].splitlines()
+
+	print len(lines)
+
+	for l in lines:
+		if l.startswith('[Parsed_ssim_0 @'):
+			# ssim data
+			l = l[l.find(']')+7:].split(' ')
+			for d in l:
+				if(d.startswith('(')):
+					print d[1:-1]
+				else:
+					sp = d.split(':')
+					print sp[0], sp[1]
+
+		elif l.startswith('[Parsed_psnr_1 @'):
+			# psnr data
+			l = l[l.find(']')+7:].split(' ')
+			for d in l:
+				sp = d.split(':')
+				print sp[0], sp[1]
+
+	exit(1)
 
 print 
 print '720p'
