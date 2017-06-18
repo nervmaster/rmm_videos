@@ -2,9 +2,40 @@ import subprocess
 import sys
 import json
 import shlex
+import csv
 
 #	@author Victor Renan Covalski Junes <vrcjunes@inf.ufpel.edu.br>
 #	@author	Henrique Pereira Borges 	<hpborges@inf.ufpel.edu.br>
+
+def get_stats(video_stream, output):
+	arg = 'ffmpeg -i ' + video_stream + ' -i ' + output + ' -lavfi "ssim;[0:v][1:v]psnr" -f null -' 
+	stats = subprocess.Popen( shlex.split(arg) , stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+
+	stats.wait()
+
+	#parse values
+	lines = stats.communicate()[0].splitlines()
+
+	result = dict()
+
+	for l in lines:
+		if l.startswith('[Parsed_ssim_0 @'):
+			# ssim data
+			l = l[l.find(']')+7:].split(' ')
+			for d in l:
+				if(d.startswith('All:')):
+					result['ssim'] = d.split(':')[1]
+				
+		elif l.startswith('[Parsed_psnr_1 @'):
+			# psnr data
+			l = l[l.find(']')+7:].split(' ')
+			for d in l:
+				if(d.startswith('average:')):
+					result['psnr'] = d.split(':')[1]
+		
+	return result
+
+
 
 original_file = sys.argv[1] #filename
 
@@ -23,12 +54,25 @@ file_info = json.loads(result.communicate()[0].decode("utf-8"))
 
 
 #output this to CSV
+arq = open('out.csv', 'w')
+header = ['archive' ,'resolution', 'bitrate', 'PSNR', 'SSIM']
+writer = csv.DictWriter(arq, fieldnames = header)
+writer.writeheader()
+row = dict()
 
 #parsing metadata
 original_bitrate = float(file_info['streams'][0]['bit_rate'])
 resolution = '{}x{}'.format(file_info['streams'][0]['width'],file_info['streams'][0]['height'])
 h = int(resolution.split('x')[0])
 w = int(resolution.split('x')[1])
+
+# Write original file to csv
+row['archive'] = original_file
+row['resolution'] = resolution
+row['bitrate'] = original_bitrate
+row['SSIM'] = 'N/A'
+row['PSNR'] = 'N/A'
+writer.writerow(row) 
 
 #get frame rate
 r_frame_rate = file_info['streams'][0]['r_frame_rate']
@@ -60,9 +104,9 @@ i_frame_interval = target_fps*2
 print 'reecoding video'
 
 #encode for 1920x1080(1080p)
-print '1080p',
-for x in target_bitrate: 
-	print x,
+print '1080p'
+for x in target_bitrate:
+	print '.',
 	output = '{}_{}.mp4'.format(1080,x)
 
 	result = subprocess.Popen(['ffmpeg', '-y',
@@ -81,40 +125,21 @@ for x in target_bitrate:
 	result.wait()
 
 	# Gerar os dados de qualidade
-	arg = 'ffmpeg -i ' + video_stream + ' -i ' + output + ' -lavfi "ssim;[0:v][1:v]psnr" -f null -' 
-	stats = subprocess.Popen( shlex.split(arg) , stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+	stats = get_stats(video_stream, output)
 
-	stats.wait()
+	# Escrever no csv
+	row['archive'] = output
+	row['resolution'] = resolution
+	row['bitrate'] = x
+	row['SSIM'] = stats['ssim']
+	row['PSNR'] = stats['psnr']
+	writer.writerow(row)
 
-	#parse values
-	lines = stats.communicate()[0].splitlines()
-
-	print len(lines)
-
-	for l in lines:
-		if l.startswith('[Parsed_ssim_0 @'):
-			# ssim data
-			l = l[l.find(']')+7:].split(' ')
-			for d in l:
-				if(d.startswith('(')):
-					print d[1:-1]
-				else:
-					sp = d.split(':')
-					print sp[0], sp[1]
-
-		elif l.startswith('[Parsed_psnr_1 @'):
-			# psnr data
-			l = l[l.find(']')+7:].split(' ')
-			for d in l:
-				sp = d.split(':')
-				print sp[0], sp[1]
-
-	exit(1)
-
-print 
+print
 print '720p'
-for x in target_bitrate: 
-	print x,
+target = None
+for x in target_bitrate:
+	print '.',
 	output = '{}_{}.mp4'.format(720,x)
 
 	result = subprocess.Popen(['ffmpeg', '-y',
@@ -130,12 +155,30 @@ for x in target_bitrate:
 	'-maxrate', '{}'.format(x),
 	'-vf', 'scale={}:{}'.format(2*h/3,2*w/3),
 	output], stderr=subprocess.PIPE).wait() #ffmpeg outputs to stderr
+	resolution = '{}x{}'.format(2*h/3, 2*w/3)
 	
+	# Usar o primeiro encode com a resolucao com taxa de bits original como comparacao
+	if(target == None):
+		target = output
+		row['SSIM'] = 'N/A'
+		row['PSNR'] = 'N/A'
+	else:
+		stats = get_stats(target, output)
+		row['SSIM'] = stats['ssim']
+		row['PSNR'] = stats['psnr']
+	
+	# Escrever no csv
+	row['archive'] = output
+	row['resolution'] = resolution
+	row['bitrate'] = x
+	writer.writerow(row)
+
 
 print 
 print '480p'
+target = None
 for x in target_bitrate: 
-	print x,
+	print '.',
 	output = '{}_{}.mp4'.format(480,x)
 
 	result = subprocess.Popen(['ffmpeg', '-y',
@@ -152,5 +195,24 @@ for x in target_bitrate:
 	'-vf', 'scale={}:{}'.format(h/3,w/3),
 	output], stderr=subprocess.PIPE).wait()
 
-print
+	resolution = '{}x{}'.format(h/3, w/3)
+	
+	# Usar o primeiro encode com a resolucao com taxa de bits original como comparacao
+	if(target == None):
+		target = output
+		row['SSIM'] = 'N/A'
+		row['PSNR'] = 'N/A'
+	else:
+		stats = get_stats(target, output)
+		row['SSIM'] = stats['ssim']
+		row['PSNR'] = stats['psnr']
+	
+	# Escrever no csv
+	row['archive'] = output
+	row['resolution'] = resolution
+	row['bitrate'] = x
+	writer.writerow(row)
 
+print
+print 'Done\nexiting...'
+arq.close()
