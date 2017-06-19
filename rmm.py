@@ -89,14 +89,14 @@ print 'Spliting video'
 #separate video stream
 subprocess.Popen(['ffmpeg',
 				'-i',original_file,
-				'-an','-c','copy',video_stream, '-y']).wait()#,stderr=subprocess.PIPE).wait() #redirecting stderr in order to make script run silently
+				'-an','-c','copy',video_stream, '-y'], stderr=subprocess.PIPE).wait() #redirecting stderr in order to make script run silently
 
 print 'Spliting audio'
 #separate audio stream
 subprocess.Popen(['ffmpeg',
 				'-i',original_file,
 				'-r',str(target_fps),
-				'-vn','-c','copy','audio_stream.m4a', '-y']).wait()#,stderr=subprocess.PIPE).wait()
+				'-vn','-c','copy','audio_stream.m4a', '-y'], stderr=subprocess.PIPE).wait()
 
 #prepare string for x264-params
 i_frame_interval = target_fps*2
