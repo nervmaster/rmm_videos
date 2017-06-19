@@ -10,12 +10,9 @@ import csv
 def get_stats(video_stream, output):
 	arg = 'ffmpeg -i ' + video_stream + ' -i ' + output + ' -lavfi "ssim;[0:v][1:v]psnr" -f null -' 
 	stats = subprocess.Popen( shlex.split(arg) , stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-
-	stats.wait()
-
+	
 	#parse values
 	lines = stats.communicate()[0].splitlines()
-
 	result = dict()
 
 	for l in lines:
@@ -108,7 +105,6 @@ print '1080p'
 for x in target_bitrate:
 	print '.',
 	output = '{}_{}.mp4'.format(1080,x)
-
 	result = subprocess.Popen(['ffmpeg', '-y',
 	'-r',str(target_fps),
 	'-i',video_stream,
@@ -120,9 +116,7 @@ for x in target_bitrate:
 	'-bufsize', '{}'.format(x),
 	'-minrate', '{}'.format(x),
 	'-maxrate', '{}'.format(x),
-	output], stderr=subprocess.STDOUT, stdout=subprocess.PIPE) #ffmpeg outputs to stderr
-	
-	result.wait()
+	output], stderr=subprocess.PIPE).wait() #ffmpeg outputs to stderr
 
 	# Gerar os dados de qualidade
 	stats = get_stats(video_stream, output)
