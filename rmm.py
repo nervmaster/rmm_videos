@@ -96,27 +96,6 @@ writer = csv.DictWriter(arq, fieldnames = header)
 writer.writeheader()
 row = dict()
 
-#############################################
-### 
-
-#separate video stream
-# print 'Spliting video'
-# video_stream =  'video_stream.mp4'
-# arg = 'ffmpeg -loglevel 0 -i {} -an -c copy {} -y'.format(original_file, video_stream)
-# subprocess.Popen(shlex.split(arg)).wait()
-
-# #separate audio stream
-# print 'Spliting audio'
-# audio_stream = 'audio_stream.aac'
-# arg = 'ffmpeg -loglevel 0 -i {} -r {} -vn -c copy {} -y'.format(original_file, target_fps, audio_stream)
-# subprocess.Popen(shlex.split(arg)).wait()
-
-# print 'Joining'
-# target_1080 = 'target_1080.mp4'
-# arg = 'ffmpeg -loglevel 0 -i {} -i {} -c:v copy -c:a aac -strict experimental {} -y'.format(video_stream, audio_stream, target_1080)
-# subprocess.Popen(shlex.split(arg)).wait()
-
-
 print 'reencoding'
 # Resolucao original
 
@@ -133,6 +112,6 @@ reencode(target_720, writer)
 print '480p'
 # Encode target video
 target_480 = 'target_480.mp4'
-arg = 'ffmpeg -loglevel 0 -i {} -vf scale=-1:480 -strict experimental {} -y'.format(original_file, target_480)
+arg = 'ffmpeg -loglevel 0 -i {} -vf scale=-1:360 -strict experimental {} -y'.format(original_file, target_480)
 subprocess.Popen(shlex.split(arg), stderr=subprocess.PIPE).wait()
 reencode(target_480, writer)
