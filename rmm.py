@@ -62,17 +62,17 @@ def reencode(target, writer, profile = 'ultrafast'):
 
 
 	#calculate target bitrate
-	target_bitrate = [1.0,0.8,0.6,0.4,0.2]
-	target_bitrate[:] = [int(x*original_bitrate) for x in target_bitrate]
+	target_bitrate = [0.8,0.6,0.4,0.2]
 
 	for b in target_bitrate:
 		print '.',
 		sys.stdout.flush()
-		output = '{}x{}_{}.mp4'.format(h,w,b)
+		output = '{}x{}_{}.mp4'.format(h,w,int(b*100))
+		bitrate = b * original_bitrate
 		arg = 'ffmpeg -loglevel 0 -y -r {0} -i {1} -c:v libx264 -preset {2} -crf 22 '\
 		      '-x264-params keyint={3}:min-keyint={3}:scenecut=-1 -strict experimental '\
 			  '-b:v {4} -bufsize {4} -minrate {4} -maxrate {4} {5}'\
-			  ''.format(target_fps, target, profile,i_frame_interval, b, output)
+			  ''.format(target_fps, target, profile,i_frame_interval, bitrate, output)
 		subprocess.Popen(shlex.split(arg), stderr = subprocess.STDOUT).wait()
 
 		# Gerar os dados de qualidade
@@ -81,7 +81,7 @@ def reencode(target, writer, profile = 'ultrafast'):
 		# Escrever no csv
 		row['archive'] = output
 		row['resolution'] = resolution
-		row['bitrate'] = x
+		row['bitrate'] = bitrate
 		row['SSIM'] = stats['ssim']
 		row['PSNR'] = stats['psnr']
 		writer.writerow(row)
