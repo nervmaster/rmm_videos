@@ -71,47 +71,48 @@ def reencode(target, writer, profile = 'ultrafast'):
 		bitrate = b * original_bitrate
 		arg = 'ffmpeg -loglevel 0 -y -r {0} -i {1} -c:v libx264 -preset {2} -crf 22 '\
 		      '-x264-params keyint={3}:min-keyint={3}:scenecut=-1 -strict experimental '\
-			  '-b:v {4} -bufsize {4} -minrate {4} -maxrate {4} {5}'\
+			  '-b:v {4} -bufsize {4} {5}'\
 			  ''.format(target_fps, target, profile,i_frame_interval, bitrate, output)
 		subprocess.Popen(shlex.split(arg), stderr = subprocess.STDOUT).wait()
 
 		# Gerar os dados de qualidade
-		stats = get_stats(target, output)
+		# stats = get_stats(target, output)
 
 		# Escrever no csv
-		row['archive'] = output
-		row['resolution'] = resolution
-		row['bitrate'] = bitrate
-		row['SSIM'] = stats['ssim']
-		row['PSNR'] = stats['psnr']
-		writer.writerow(row)
+		# row['archive'] = output
+		# row['resolution'] = resolution
+		# row['bitrate'] = bitrate
+		# row['SSIM'] = stats['ssim']
+		# row['PSNR'] = stats['psnr']
+		# writer.writerow(row)
 	print
 
-original_file = sys.argv[1] #filename
+# original_file = sys.argv[1] #filename
 
 #output this to CSV
-arq = open('out.csv', 'w')
-header = ['archive' ,'resolution', 'bitrate', 'PSNR', 'SSIM']
-writer = csv.DictWriter(arq, fieldnames = header)
-writer.writeheader()
-row = dict()
+# arq = open('out.csv', 'w')
+# header = ['archive' ,'resolution', 'bitrate', 'PSNR', 'SSIM']
+# writer = csv.DictWriter(arq, fieldnames = header)
+# writer.writeheader()
+# row = dict()
 
-print 'reencoding'
+# print 'reencoding'
 # Resolucao original
 
 print '1080p'
-reencode(original_file, writer)
+target_1080 = 'target_1080_2s.mp4'
+reencode(target_1080, writer)
 
 print '720p'
 # Encode target video
-target_720 = 'target_720.mp4'
-arg = 'ffmpeg -loglevel 0 -i {} -vf scale=-1:720 -strict experimental {} -y'.format(original_file, target_720)
-subprocess.Popen(shlex.split(arg), stderr=subprocess.PIPE).wait()
+target_720 = 'target_720_2s.mp4'
+# arg = 'ffmpeg -loglevel 0 -i {} -vf scale=-1:720 -strict experimental {} -y'.format(original_file, target_720)
+# subprocess.Popen(shlex.split(arg), stderr=subprocess.PIPE).wait()
 reencode(target_720, writer)
 
 print '480p'
 # Encode target video
-target_480 = 'target_480.mp4'
-arg = 'ffmpeg -loglevel 0 -i {} -vf scale=-1:360 -strict experimental {} -y'.format(original_file, target_480)
-subprocess.Popen(shlex.split(arg), stderr=subprocess.PIPE).wait()
+target_480 = 'target_480_2s.mp4'
+# arg = 'ffmpeg -loglevel 0 -i {} -vf scale=-1:360 -strict experimental {} -y'.format(original_file, target_480)
+# subprocess.Popen(shlex.split(arg), stderr=subprocess.PIPE).wait()
 reencode(target_480, writer)
