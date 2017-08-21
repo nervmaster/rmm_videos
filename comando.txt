@@ -1,0 +1,2 @@
+MP4Box -dash 2000 -profile dashavc264:onDemand -rap -out manifest target_1080_2s.mp4#video target_720_2s.mp4#video target_480_2s.mp4#video 1920x1080_20.mp4#video 1920x1080_40.mp4#video 1920x1080_60.mp4#video 1920x1080_80.mp4#video 1280x720_20.mp4#video 1280x720_40.mp4#video 1280x720_60.mp4#video 1280x720_80.mp4#video 640x360_20.mp4#video 640x360_40.mp4#video 640x360_60.mp4#video 640x360_80.mp4#video target_1080_2s.mp4#audio
+
